@@ -1,4 +1,4 @@
-import 'package:snooke_master/models/frame_data.dart';
+import 'package:snooke_master/models/data/frame_data.dart';
 
 
 class CareerData {

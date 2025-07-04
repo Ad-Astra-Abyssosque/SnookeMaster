@@ -1,5 +1,7 @@
 
 
+import 'package:snooke_master/models/data/shot_data.dart';
+
 class FrameData {
   // TODO: FrameData
   //int highestBreak;
@@ -14,4 +16,8 @@ class FrameData {
   // 20+ 30+ 50+
   // 平均击球间隔
   // 最大击球间隔
+
+  void addShotData(ShotData shotData) {
+
+  }
 }

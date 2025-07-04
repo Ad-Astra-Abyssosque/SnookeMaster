@@ -3,7 +3,10 @@
 import 'dart:ffi';
 import 'dart:ui';
 import 'package:snooke_master/models/career_data.dart';
-import 'package:snooke_master/models/frame_data.dart';
+import 'package:snooke_master/models/data/frame_data.dart';
+import 'package:snooke_master/models/data/match_data.dart';
+import 'package:snooke_master/models/data/shot_data.dart';
+import 'package:snooke_master/models/match_model.dart';
 
 enum Sex {
   male,
@@ -21,6 +24,9 @@ class Player {
   String? avatar;
 
   CareerData? careerData;
+  MatchData? currentMatchData;
+  Side? currentSide;
+
   // 支持查看详细的赛事和对局数据？
 
 
@@ -36,6 +42,10 @@ class Player {
 
   void updateCareerData(List<FrameData> matchData) {
     careerData?.update(matchData);
+  }
+
+  void addShotData(ShotData shotData) {
+    currentMatchData?.addShotData(shotData);
   }
 
 

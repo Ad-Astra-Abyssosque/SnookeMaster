@@ -1,7 +1,9 @@
 // matches_page.dart
 import 'package:flutter/material.dart';
+import 'package:snooke_master/widgets/balls_panel.dart';
 import 'package:snooke_master/widgets/player_data_single_match.dart';
 import 'package:snooke_master/widgets/score_board.dart';
+import 'package:snooke_master/models/match_model.dart';
 
 class MatchesPage extends StatefulWidget {
   const MatchesPage({super.key});
@@ -15,6 +17,7 @@ class _MatchesPageState extends State<MatchesPage>
 
   late TabController _tabController;
   final List<String> players = ['ayaka', 'eula', 'yoimiya']; // 从数据源获取球员数据
+  final matchModel = MatchModel();
 
   @override
   void initState() {
@@ -40,6 +43,7 @@ class _MatchesPageState extends State<MatchesPage>
     //     }).toList(),
     //   ),
     // );
+    final screenSize = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
         title: const Text('当前对局'),
@@ -48,11 +52,12 @@ class _MatchesPageState extends State<MatchesPage>
       body: Column(
         children: [
           // 1. 添加共享计分板（高度约为屏幕1/4）
-          ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.5,
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.02),
+            child: SizedBox(
+              height: screenSize.height * 0.25,
+              child: ScoreBoard(match: matchModel),
             ),
-            child: const ScoreBoard(), // 使用之前创建的计分板Widget
           ),
 
           // 2. 添加TabBar（放在计分板下方）
@@ -72,6 +77,14 @@ class _MatchesPageState extends State<MatchesPage>
               children: players.map((player) {
                 return Text('player: player'); // 自定义组件展示对局信息
               }).toList(),
+            ),
+          ),
+
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.02),
+            child: SizedBox(
+              // height: screenSize.height * 0.25,
+              child: BallsPanel(matchModel: matchModel),
             ),
           ),
         ],
