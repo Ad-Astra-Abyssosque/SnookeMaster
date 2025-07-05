@@ -1,8 +1,5 @@
 
-
-import 'dart:ffi';
-import 'dart:ui';
-import 'package:snooke_master/models/career_data.dart';
+import 'package:snooke_master/models/data/career_data.dart';
 import 'package:snooke_master/models/data/frame_data.dart';
 import 'package:snooke_master/models/data/match_data.dart';
 import 'package:snooke_master/models/data/shot_data.dart';
@@ -24,7 +21,7 @@ class Player {
   String organization; // 可空字段
   String? avatar;
 
-  CareerData careerData = CareerData();
+  CareerData careerData = CareerData();   // TODO 持久化存储
   MatchData? currentMatchData;
   Side? currentSide;
 
@@ -42,21 +39,33 @@ class Player {
     this.currentSide,
   });
 
-  void updateCareerData(List<FrameData> matchData) {
-    careerData.update(matchData);
-  }
-
   void addShotData(ShotData shotData) {
     currentMatchData?.addShotData(shotData);
   }
 
-  void onFrameEnd() {
-    currentMatchData?.onFrameEnd();
+  void onFrameEnd(bool win) {
+    currentMatchData?.onFrameEnd(win);
   }
 
-  void onMatchEnd() {
-    currentMatchData?.onFrameEnd();
+  void onMatchEnd(bool win) {
+    currentMatchData?.onFrameEnd(win);
+    currentMatchData?.win = win;
+    careerData.update(currentMatchData!);
+    // TODO 持久化存储，更新本次赛事的所有击球数据到数据库中
+    currentMatchData = null;
+    currentSide = null;
+  }
 
+  void onFrameReset() {
+    currentMatchData?.resetFrame();
+  }
+
+  void onMatchReset() {
+    currentMatchData = null;
+  }
+
+  void onMatchStart() {
+    currentMatchData = MatchData();
   }
 
 }

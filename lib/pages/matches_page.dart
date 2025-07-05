@@ -3,14 +3,15 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:snooke_master/widgets/balls_panel.dart';
-import 'package:snooke_master/widgets/player_data_single_match.dart';
 import 'package:snooke_master/widgets/score_board.dart';
 import 'package:snooke_master/models/match_model.dart';
-
 import '../models/player.dart';
+import 'package:snooke_master/utils.dart';
 
 class MatchesPage extends StatefulWidget {
-  const MatchesPage({super.key});
+  final VoidCallback onEndMatch;
+
+  const MatchesPage({super.key, required this.onEndMatch});
 
   @override
   State<MatchesPage> createState() => _MatchesPageState();
@@ -19,8 +20,7 @@ class MatchesPage extends StatefulWidget {
 class _MatchesPageState extends State<MatchesPage>
     with SingleTickerProviderStateMixin {
 
-  final List<String> players = ['ayaka', 'eula', 'yoimiya']; // 从数据源获取球员数据
-
+  //final List<String> players = ['ayaka', 'eula', 'yoimiya']; // 从数据源获取球员数据
   late TabController _tabController;
   final matchModel = MatchModel(players: [
     Player(id: '1', name: 'ayaka', currentSide: Side.alpha),
@@ -95,8 +95,45 @@ class _MatchesPageState extends State<MatchesPage>
     final screenSize = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('当前对局'),
-        // 移除bottom中的TabBar，因为我们将在body中自定义布局
+        title: const Align(
+          alignment: Alignment.centerLeft, // 标题靠左
+          child: Text('当前对局'),
+        ),
+        actions: [
+          // 取消按钮 (X)
+          IconButton(
+            icon: const Icon(Icons.close),
+            tooltip: '取消赛事', // 辅助提示
+            onPressed: () async {
+              final bool? confirm = await showConfirmDialog(
+                context: context,
+                title: '确认取消赛事？',
+                content: '取消后将丢失当前赛事数据',
+              );
+              if (confirm == true) {
+                matchModel.stopMatch(false); // 不保存数据
+                widget.onEndMatch(); // 触发父组件的回调
+              }
+            },
+          ),
+
+          // 确认按钮 (√)
+          IconButton(
+            icon: const Icon(Icons.check),
+            tooltip: '结束赛事', // 辅助提示
+            onPressed: () async {
+              final bool? confirm = await showConfirmDialog(
+                context: context,
+                title: '确认结束赛事？',
+                content: '确认后将保存当前赛事数据',
+              );
+              if (confirm == true) {
+                matchModel.stopMatch(true); // 保存数据
+                widget.onEndMatch(); // 触发父组件的回调
+              }
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [

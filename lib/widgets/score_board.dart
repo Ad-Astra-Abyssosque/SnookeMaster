@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:snooke_master/models/match_model.dart';
+import 'package:snooke_master/utils.dart';
 
 class ScoreBoard extends StatefulWidget {
   final MatchModel match; // 接收外部传入的MatchModel
@@ -34,22 +35,10 @@ class _ScoreBoardState extends State<ScoreBoard> {
 
   void _onScoreBtnClicked(Side side) async {
     // 弹出确认对话框
-    final bool? confirm = await showDialog<bool>(
+    final bool? confirm = await showConfirmDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('确认开始下一局？'),
-        content: const Text('当前比分将被保存，确定继续吗？'),
-        actions: [
-          TextButton(
-            child: const Text('取消'),
-            onPressed: () => Navigator.pop(context, false),
-          ),
-          TextButton(
-            child: const Text('确认'),
-            onPressed: () => Navigator.pop(context, true),
-          ),
-        ],
-      ),
+      title: '确认开始下一局？',
+      content: '当前比分将被保存，确定继续吗？',
     );
 
     // 只有用户点击确认才执行

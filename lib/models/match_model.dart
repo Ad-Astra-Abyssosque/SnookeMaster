@@ -20,10 +20,17 @@ class MatchModel extends ChangeNotifier {
   int get currentGameSeconds => _currentGameSeconds;
   int get totalGameSeconds => _totalGameSeconds;
   bool get isRunning => _isRunning;
+  int get currentIndex => _currentIndex;
 
-
+  Player? get currentShootingPlayer {
+    if (_currentIndex >= 0 && _currentIndex < players.length) {
+      return players[_currentIndex];
+    }
+    return null;
+  }
 
   // 大比分（帧比分）
+  bool _firstStart = true;
   int _frameScorePlayer1 = 0;
   int _frameScorePlayer2 = 0;
 
@@ -37,11 +44,12 @@ class MatchModel extends ChangeNotifier {
   int _totalGameSeconds = 0;   // 总时长（秒）
   bool _isRunning = false;     // 计时器是否运行中
 
-  List<_ScoreBoardStateSnapshot> _undoStack = [];
+  final List<_ScoreBoardStateSnapshot> _undoStack = [];
 
   // 选手相关
   List<Player> players;
   Side _currentSide = Side.alpha;
+  int _currentIndex = 0;
 
   // 构造函数传入players
   MatchModel({
@@ -103,8 +111,15 @@ class MatchModel extends ChangeNotifier {
     debugPrint('after restore snapshot');
   }
 
-  void _saveFrameData() {
-    // TODO 分别保存每位选手的对局数据
+  void _saveFrameData(Side winSide) {
+    for (int i = 0; i < players.length; i++) {
+      if (players[i].currentSide == winSide) {
+        players[i].onFrameEnd(true);
+      }
+      else {
+        players[i].onFrameEnd(false);
+      }
+    }
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -136,11 +151,11 @@ class MatchModel extends ChangeNotifier {
         score = 7;
         break;
     }
-    recordShot(ball, score, ShotResult.pot);
+    _recordShot(ball, score, ShotResult.pot);
   }
 
   void onBallMiss(BallColor ball) {
-    recordShot(ball, 0, ShotResult.miss);
+    _recordShot(ball, 0, ShotResult.miss);
     _switchToNextPlayer();
   }
 
@@ -163,24 +178,13 @@ class MatchModel extends ChangeNotifier {
         score = 7;
         break;
     }
-    recordShot(ball, score, ShotResult.fault);
+    _recordShot(ball, score, ShotResult.fault);
     _switchToNextPlayer();
   }
 
   //////////////////////////////////////////////////////////////////////////////
   // Player
   //////////////////////////////////////////////////////////////////////////////
-
-  int _currentIndex = 0;
-
-  Player? get currentShootingPlayer {
-    if (_currentIndex >= 0 && _currentIndex < players.length) {
-      return players[_currentIndex];
-    }
-    return null;
-  }
-
-  int get currentIndex => _currentIndex;
 
   // 程序控制切换Tab
   void switchToPlayer(int index) {
@@ -215,11 +219,7 @@ class MatchModel extends ChangeNotifier {
     return _currentSide == Side.alpha ? Side.beta : Side.alpha;
   }
 
-  void switchSide() {
-    _currentSide = getOppositeSide();
-  }
-
-  void recordShot(BallColor ball, int score, ShotResult shotResult) {
+  void _recordShot(BallColor ball, int score, ShotResult shotResult) {
     switch (shotResult) {
       case ShotResult.pot: {
         increaseScore(_currentSide, score);
@@ -254,6 +254,7 @@ class MatchModel extends ChangeNotifier {
 
   void nextFrame(Side side) {
     _saveSnapshot();
+    _saveFrameData(side);
     if (side == Side.alpha) {
       _frameScorePlayer1++;
     } else {
@@ -274,6 +275,12 @@ class MatchModel extends ChangeNotifier {
 
   // 开始/暂停计时
   void toggleTimer() {
+    if (_firstStart) {
+      _firstStart = false;
+      for (int i = 0; i < players.length; i++) {
+        players[i].onMatchStart();
+      }
+    }
     if (_isRunning) {
       _timer?.cancel();
     } else {
@@ -294,6 +301,9 @@ class MatchModel extends ChangeNotifier {
     _currentGameSeconds = 0;
     _totalGameSeconds = 0;
     _isRunning = false;
+    for (int i = 0; i < players.length; i++) {
+      players[i].onMatchReset();
+    }
     notifyListeners();
   }
 
@@ -304,6 +314,9 @@ class MatchModel extends ChangeNotifier {
     _currentScorePlayer2 = 0;
     _currentGameSeconds = 0;
     _isRunning = false;
+    for (int i = 0; i < players.length; i++) {
+      players[i].onFrameReset();
+    }
     notifyListeners();
   }
 
@@ -314,6 +327,9 @@ class MatchModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void stopMatch(bool save) {
+
+  }
 
 }
 
