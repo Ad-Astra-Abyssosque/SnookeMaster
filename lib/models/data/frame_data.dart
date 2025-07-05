@@ -17,7 +17,29 @@ class FrameData {
   // 平均击球间隔
   // 最大击球间隔
 
-  void addShotData(ShotData shotData) {
+  // 假设有以下字段（根据你的TODO补充）
+  int highestBreak = 0;
+  int shotsCount = 0;
+  int potsCount = 0;
+  List<ShotData> shots = [];
 
+  FrameData();
+
+  // 拷贝构造函数
+  FrameData.copy(FrameData other)
+      : highestBreak = other.highestBreak,
+        shotsCount = other.shotsCount,
+        potsCount = other.potsCount,
+        shots = List.from(other.shots); // 浅拷贝ShotData列表
+
+  // 或者使用拷贝方法（二选一）
+  FrameData copy() {
+    return FrameData.copy(this);
+  }
+
+  void addShotData(ShotData shotData) {
+    shots.add(shotData);
+    shotsCount++;
+    // 其他逻辑...
   }
 }

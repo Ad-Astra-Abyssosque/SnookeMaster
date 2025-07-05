@@ -3,15 +3,32 @@ import 'package:snooke_master/models/data/shot_data.dart';
 
 class MatchData {
 
-  FrameData? matchData;
-  FrameData? currentFrameData;
+  FrameData matchData = FrameData();
+  FrameData currentFrameData = FrameData();
   List<FrameData> frameDataList = [];
 
-  void addShotData(ShotData shotData) {
-    currentFrameData?.addShotData(shotData);
-    matchData?.addShotData(shotData);
+  MatchData();
+
+  // 深拷贝构造函数
+  MatchData.copy(MatchData other)
+      : matchData = FrameData.copy(other.matchData),
+        currentFrameData = FrameData.copy(other.currentFrameData),
+        frameDataList = [for (var frame in other.frameDataList) FrameData.copy(frame)];
+
+  // 或者使用拷贝方法（二选一）
+  MatchData copy() {
+    return MatchData.copy(this);
   }
 
+  void addShotData(ShotData shotData) {
+    currentFrameData.addShotData(shotData);
+    matchData.addShotData(shotData);
+  }
+
+  void onFrameEnd() {
+    frameDataList.add(currentFrameData);
+    currentFrameData = FrameData();
+  }
 
 
 }

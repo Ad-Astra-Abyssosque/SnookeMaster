@@ -7,14 +7,18 @@ enum ShotResult { pot, miss, fault}
 
 class ShotData {
   // 本次击球时长
-  int shotTime;
+  final int shotTime;
+
+  final BallColor ball;
+
   // 击球结果
-  ShotResult shotResult;
+  final ShotResult shotResult;
   // 得分
-  int score;
+  final int score;
 
   ShotData({
     required this.shotTime,
+    required this.ball,
     required this.score,
     required this.shotResult,
   });

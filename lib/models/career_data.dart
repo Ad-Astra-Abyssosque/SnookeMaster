@@ -8,7 +8,7 @@ class CareerData {
   double frameWinRate;
   double matchWinRate;
 
-  FrameData? frameDataSummary;
+  FrameData frameDataSummary = FrameData();
 
 
 
@@ -17,7 +17,6 @@ class CareerData {
     this.totalMatch = 0,
     this.frameWinRate = 0.0,
     this.matchWinRate = 0.0,
-    this.frameDataSummary
   });
 
   void update(List<FrameData> matchData) {

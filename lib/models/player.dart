@@ -16,6 +16,7 @@ enum Sex {
 
 
 class Player {
+  final String id;
   String name;
   int age;  // 注意：Dart 中是 int 不是 Int
   Sex sex;
@@ -23,7 +24,7 @@ class Player {
   String organization; // 可空字段
   String? avatar;
 
-  CareerData? careerData;
+  CareerData careerData = CareerData();
   MatchData? currentMatchData;
   Side? currentSide;
 
@@ -31,22 +32,31 @@ class Player {
 
 
   Player({
+    required this.id,
     required this.name,  // 必需参数
     this.age = 0,        // 默认值为0
     this.sex = Sex.male, // 默认值为 male
     this.brief = '',          // 可空，无默认值
     this.organization = '',   // 可空，无默认值
     this.avatar,
-    this.careerData,
+    this.currentSide,
   });
 
   void updateCareerData(List<FrameData> matchData) {
-    careerData?.update(matchData);
+    careerData.update(matchData);
   }
 
   void addShotData(ShotData shotData) {
     currentMatchData?.addShotData(shotData);
   }
 
+  void onFrameEnd() {
+    currentMatchData?.onFrameEnd();
+  }
+
+  void onMatchEnd() {
+    currentMatchData?.onFrameEnd();
+
+  }
 
 }

@@ -5,6 +5,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:snooke_master/models/player.dart';
 import 'package:snooke_master/models/data/shot_data.dart';
 
+import 'data/match_data.dart';
+
 
 
 enum Side {alpha, beta}
@@ -38,11 +40,13 @@ class MatchModel extends ChangeNotifier {
   List<_ScoreBoardStateSnapshot> _undoStack = [];
 
   // 选手相关
-  List<Player> players = [];
-  late Player _currentShootingPlayer;
+  List<Player> players;
   Side _currentSide = Side.alpha;
 
-  // TODO 构造函数传入players
+  // 构造函数传入players
+  MatchModel({
+    required this.players
+  });
 
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -50,6 +54,14 @@ class MatchModel extends ChangeNotifier {
       _totalGameSeconds++;
       notifyListeners();
     });
+  }
+
+  Map<String, MatchData> _createPlayerDataBackup() {
+    return {
+      for (final p in players)
+        if (p.currentMatchData != null) // 显式检查
+          p.id: MatchData.copy(p.currentMatchData!)
+    };
   }
 
   // 保存快照的方法
@@ -61,6 +73,9 @@ class MatchModel extends ChangeNotifier {
       frameScorePlayer2: _frameScorePlayer2,
       currentGameSeconds: _currentGameSeconds,
       totalGameSeconds: _totalGameSeconds,
+      playerDataBackup: _createPlayerDataBackup(),
+      players: List.from(players),  // 注意：需要创建一个新的列表，否则快照会持有对原列表的引用！在updatePlayers时先clear原列表就会导致问题！
+      currentIndex: _currentIndex,
     ));
   }
 
@@ -72,6 +87,20 @@ class MatchModel extends ChangeNotifier {
     _frameScorePlayer2 = snapshot.frameScorePlayer2;
     _currentGameSeconds = snapshot.currentGameSeconds;
     _totalGameSeconds = snapshot.totalGameSeconds;
+
+    updatePlayers(snapshot.players, snapshot.currentIndex, false);
+
+    // restore every player's currentMatchData
+    for (final player in players) {
+      final backupData = snapshot.playerDataBackup[player.id];
+      if (backupData != null) {
+        player.currentMatchData = backupData;
+      } else {
+        // 如果没有备份数据，则初始化为新对象（根据业务需求决定）
+        player.currentMatchData = MatchData();
+      }
+    }
+    debugPrint('after restore snapshot');
   }
 
   void _saveFrameData() {
@@ -108,12 +137,11 @@ class MatchModel extends ChangeNotifier {
         break;
     }
     recordShot(ball, score, ShotResult.pot);
-    increaseScore(_currentSide, score);
   }
 
   void onBallMiss(BallColor ball) {
     recordShot(ball, 0, ShotResult.miss);
-    switchPlayer();
+    _switchToNextPlayer();
   }
 
   void onFault(BallColor ball) {
@@ -136,13 +164,52 @@ class MatchModel extends ChangeNotifier {
         break;
     }
     recordShot(ball, score, ShotResult.fault);
-    increaseScore(getOppositeSide(), score);
-    switchPlayer();
+    _switchToNextPlayer();
   }
 
   //////////////////////////////////////////////////////////////////////////////
   // Player
   //////////////////////////////////////////////////////////////////////////////
+
+  int _currentIndex = 0;
+
+  Player? get currentShootingPlayer {
+    if (_currentIndex >= 0 && _currentIndex < players.length) {
+      return players[_currentIndex];
+    }
+    return null;
+  }
+
+  int get currentIndex => _currentIndex;
+
+  // 程序控制切换Tab
+  void switchToPlayer(int index) {
+    debugPrint('MatchModel switchToPlayer: index $index, _currentIndex: $_currentIndex');
+    if (index == _currentIndex) return;
+    if (index >= 0 && index < players.length) {
+      _currentIndex = index;
+      notifyListeners();
+    }
+  }
+
+  // 程序控制切换到下一个球员
+  void _switchToNextPlayer() {
+    _currentIndex = (_currentIndex + 1) % players.length;
+    _currentSide = currentShootingPlayer!.currentSide!;
+    notifyListeners();
+  }
+
+  // 更新球员列表（拖动排序时使用）
+  void updatePlayers(List<Player> newPlayers, int newIndex, [bool notify = true]) {
+    players
+      ..clear()
+      ..addAll(newPlayers);
+    _currentIndex = newIndex;
+    debugPrint('MatchModel updatePlayers: _currentIndex: $_currentIndex');
+    if (notify) {
+      notifyListeners();
+    }
+  }
 
   Side getOppositeSide() {
     return _currentSide == Side.alpha ? Side.beta : Side.alpha;
@@ -152,17 +219,22 @@ class MatchModel extends ChangeNotifier {
     _currentSide = getOppositeSide();
   }
 
-  // Triggered by user clicking tab
-  void onSwitchPlayer() {
-
-  }
-
-  void switchPlayer() {
-
-  }
-
   void recordShot(BallColor ball, int score, ShotResult shotResult) {
-    _currentShootingPlayer.addShotData(ShotData(shotTime: 10, score: score, shotResult: shotResult));
+    switch (shotResult) {
+      case ShotResult.pot: {
+        increaseScore(_currentSide, score);
+        break;
+      }
+      case ShotResult.miss: {
+        increaseScore(_currentSide, score);
+        break;
+      }
+      case ShotResult.fault: {
+        increaseScore(getOppositeSide(), score);
+        break;
+      }
+    }
+    currentShootingPlayer?.addShotData(ShotData(shotTime: 10, ball: ball, score: score, shotResult: shotResult));
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -254,6 +326,9 @@ class _ScoreBoardStateSnapshot {
   final int frameScorePlayer2;
   final int currentGameSeconds;
   final int totalGameSeconds;
+  final Map<String, MatchData> playerDataBackup;
+  final List<Player> players;
+  final int currentIndex;
   // ... 其他需要保存的状态
   _ScoreBoardStateSnapshot({
     required this.currentScorePlayer1,
@@ -262,5 +337,8 @@ class _ScoreBoardStateSnapshot {
     required this.frameScorePlayer2,
     required this.currentGameSeconds,
     required this.totalGameSeconds,
+    required this.playerDataBackup,
+    required this.players,
+    required this.currentIndex,
   });
 }
