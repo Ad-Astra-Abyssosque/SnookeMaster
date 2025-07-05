@@ -6,6 +6,7 @@ import 'package:snooke_master/widgets/balls_panel.dart';
 import 'package:snooke_master/widgets/score_board.dart';
 import 'package:snooke_master/models/match_model.dart';
 import 'package:snooke_master/widgets/player_name_card.dart';
+import 'package:snooke_master/widgets/player_data_widget.dart';
 
 
 import '../models/player.dart';
@@ -215,23 +216,44 @@ class _MatchesPageState extends State<MatchesPage>
               return TabBarView(
                 controller: _tabController,
                 children: [
-                  for (int i = 0; i < matchModel.players.length; i++)
+                  //for (int i = 0; i < matchModel.players.length; i++)
                     // 这里用 PlayerCardWidget 替代 Text
-                    Column(
-                      children: [
-                        Center(
-                        child: PlayerCardWidget(
-                          name: matchModel.players[i].name,
-                          brief: matchModel.players[i].brief,
-                          avatar: matchModel.players[i].avatar != null
-                              ? NetworkImage(matchModel.players[i].avatar!)
-                              : null,
-                        ),
-                      ),
-                      Container()
-                      ],
-
-                    ),
+                    // Column(
+                    //   children: [
+                    //     Center(
+                    //     child: PlayerCardWidget(
+                    //       name: matchModel.players[i].name,
+                    //       brief: matchModel.players[i].brief,
+                    //       avatar: matchModel.players[i].avatar != null
+                    //           ? NetworkImage(matchModel.players[i].avatar!)
+                    //           : null,
+                    //     ),
+                    //   ),
+                    //   Container()
+                    //   ],
+                    //
+                    // ),
+                      for (int i = 0; i < matchModel.players.length; i++)
+                            // 每页先显示球员名片，然后用 Expanded 显示可滚动的统计数据
+                          Column(
+                              mainAxisSize: MainAxisSize.max,
+                              children: [
+                                // 顶部名片
+                                PlayerCardWidget(
+                                  name: matchModel.players[i].name,
+                                  brief: matchModel.players[i].brief,
+                                  avatar: matchModel.players[i].avatar != null
+                                      ? NetworkImage(matchModel.players[i].avatar!)
+                                      : null,
+                                ),
+                                // 占用剩余空间的统计列表
+                                Expanded(
+                                  child: PlayerStatsWidget(
+                                      player: matchModel.players[i],
+                                  ),
+                                ),
+                              ],
+                            ),
 
 
 

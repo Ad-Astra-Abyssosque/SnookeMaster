@@ -71,6 +71,7 @@ class FrameData {
 
     int ball = shotData.ball.index;
 
+
     shotsCount++;
     ballsShotCounts[ball]++;
 
@@ -83,14 +84,15 @@ class FrameData {
       ballsPotCounts[ball]++;
       potSuccessCounts[ball] = ballsPotCounts[ball] / ballsShotCounts[ball];
       totalScore += shotData.score;
-
+      // 记录上一次的break，用于记录单杆10+、20+...
+      int preBreak = break_;
       break_ += shotData.score;
       highestBreak = break_ > highestBreak ? break_ : highestBreak;
-      if (break_ >= 100) centuries++;
-      if (break_ >= 50) plus50++;
-      if (break_ >= 30) plus30++;
-      if (break_ >= 20) plus20++;
-      if (break_ >= 10) plus10++;
+      if (break_ >= 100 && preBreak < 100) centuries++;
+      if (break_ >= 50 && preBreak < 50) plus50++;
+      if (break_ >= 30 && preBreak < 30) plus30++;
+      if (break_ >= 20 && preBreak < 20) plus20++;
+      if (break_ >= 10 && preBreak < 10) plus10++;
     }
     else if (shotData.shotResult == ShotResult.fault) {
       faultCount++;
