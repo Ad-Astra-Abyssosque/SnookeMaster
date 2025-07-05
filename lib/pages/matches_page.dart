@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:snooke_master/widgets/balls_panel.dart';
 import 'package:snooke_master/widgets/score_board.dart';
 import 'package:snooke_master/models/match_model.dart';
+import 'package:snooke_master/widgets/player_name_card.dart';
+
+
 import '../models/player.dart';
 import 'package:snooke_master/utils.dart';
 
@@ -213,11 +216,26 @@ class _MatchesPageState extends State<MatchesPage>
                 controller: _tabController,
                 children: [
                   for (int i = 0; i < matchModel.players.length; i++)
-                    Text(matchModel.players[i].name)
-                ]
-                // matchModel.players.map((player) {
-                //   return Text(player.name); // 自定义组件展示对局信息
-                // }).toList(),
+                    // 这里用 PlayerCardWidget 替代 Text
+                    Column(
+                      children: [
+                        Center(
+                        child: PlayerCardWidget(
+                          name: matchModel.players[i].name,
+                          brief: matchModel.players[i].brief,
+                          avatar: matchModel.players[i].avatar != null
+                              ? NetworkImage(matchModel.players[i].avatar!)
+                              : null,
+                        ),
+                      ),
+                      Container()
+                      ],
+
+                    ),
+
+
+
+                ],
               );
             })
           ),
