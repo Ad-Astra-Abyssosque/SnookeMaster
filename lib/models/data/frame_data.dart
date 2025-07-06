@@ -1,5 +1,6 @@
 
 
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:snooke_master/models/data/shot_data.dart';
@@ -36,6 +37,65 @@ class FrameData {
   List<ShotData> shots = [];
 
   FrameData();
+
+  FrameData.fromDb(Map<String, dynamic> map) {
+    // 基本类型直接映射
+    shotsCount = map['shots_count'] as int;
+    potsCount = map['pots_count'] as int;
+    potSuccessRate = map['pot_success_rate'] as double;
+    totalScore = map['total_score'] as int;
+    frameTime = map['frame_time'] as int;
+    faultCount = map['fault_count'] as int;
+    break_ = map['break_'] as int;
+    highestBreak = map['highest_break'] as int;
+    centuries = map['centuries'] as int;
+    plus50 = map['plus50'] as int;
+    plus30 = map['plus30'] as int;
+    plus20 = map['plus20'] as int;
+    plus10 = map['plus10'] as int;
+    averageShotTime = map['average_shot_time'] as double;
+    maxShotTime = map['max_shot_time'] as double;
+
+    // 列表类型处理 - JSON反序列化
+    faultCounts = _parseJsonList(map['fault_counts']);
+    ballsShotCounts = _parseJsonList(map['balls_shot_counts']);
+    ballsPotCounts = _parseJsonList(map['balls_pot_counts']);
+    potSuccessCounts = _parseJsonList(map['pot_success_counts'], isDouble: true);
+  }
+
+  // JSON字符串转List<int/double>
+  List<T> _parseJsonList<T>(String jsonString, {bool isDouble = false}) {
+    final list = jsonDecode(jsonString) as List;
+    return list.map((e) => isDouble ? e.toDouble() : e as int).cast<T>().toList();
+  }
+
+  // 转换为Map用于数据库存储
+  Map<String, dynamic> toDbMap() {
+    return {
+      'shots_count': shotsCount,
+      'pots_count': potsCount,
+      'pot_success_rate': potSuccessRate,
+      'total_score': totalScore,
+      'frame_time': frameTime,
+      'fault_count': faultCount,
+      'break_': break_,
+      'highest_break': highestBreak,
+      'centuries': centuries,
+      'plus50': plus50,
+      'plus30': plus30,
+      'plus20': plus20,
+      'plus10': plus10,
+      'average_shot_time': averageShotTime,
+      'max_shot_time': maxShotTime,
+
+      // 列表类型序列化为JSON
+      'fault_counts': jsonEncode(faultCounts),
+      'balls_shot_counts': jsonEncode(ballsShotCounts),
+      'balls_pot_counts': jsonEncode(ballsPotCounts),
+      'pot_success_counts': jsonEncode(potSuccessCounts),
+    };
+
+  }
 
   // 拷贝构造函数
   FrameData.copy(FrameData other)
@@ -111,14 +171,14 @@ class FrameData {
     }
 
     frameTime += data.frameTime;
-    averageShotTime = frameTime / shotsCount;
+    averageShotTime = shotsCount > 0 ? frameTime / shotsCount : 0.0;
 
     potsCount += data.potsCount;
-    potSuccessRate = potsCount / shotsCount;
+    potSuccessRate = shotsCount > 0 ? potsCount / shotsCount : 0.0;
 
     for (int i = 0; i < ballsPotCounts.length; i++) {
       ballsPotCounts[i] += data.ballsPotCounts[i];
-      potSuccessCounts[i] = ballsPotCounts[i] / ballsShotCounts[i];
+      potSuccessCounts[i] = ballsShotCounts[i] > 0 ? ballsPotCounts[i] / ballsShotCounts[i] : 0.0;
     }
 
     totalScore += data.totalScore;

@@ -45,7 +45,11 @@ class _MatchesPageState extends State<MatchesPage>
   void initState() {
     super.initState();
 
-    matchModel = MatchModel(players: List.from(widget.matchInfo.players));
+    matchModel = MatchModel(
+        matchInfo: widget.matchInfo,
+        // players: List.from(widget.matchInfo.players),
+        // matchUuid: widget.matchInfo.uuid,
+    );
     _matchName = widget.matchInfo.name;
 
     _tabController = TabController(
@@ -139,10 +143,16 @@ class _MatchesPageState extends State<MatchesPage>
             icon: const Icon(Icons.check),
             tooltip: '结束赛事', // 辅助提示
             onPressed: () async {
+              if (matchModel.frameScorePlayer1 == matchModel.frameScorePlayer2) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('当前处于平局！')),
+                );
+                return;
+              }
               final bool? confirm = await showConfirmDialog(
                 context: context,
-                title: '确认结束赛事？',
-                content: '确认后将保存当前赛事数据',
+                title: '确认结束赛事并保存？',
+                content: '当前小局不会计入数据，请确保当前小局已结算',
               );
               if (confirm == true) {
                 matchModel.stopMatch(true); // 保存数据
@@ -184,7 +194,7 @@ class _MatchesPageState extends State<MatchesPage>
                 children: [
                   for (int i = 0; i < matchModel.players.length; i++)
                     ReorderableDelayedDragStartListener(
-                      key: ValueKey(matchModel.players[i].id),
+                      key: ValueKey(matchModel.players[i].uuid),
                       index: i,
                       // child: Card(
                       //   color: Colors.red[300],
@@ -259,6 +269,7 @@ class _MatchesPageState extends State<MatchesPage>
                                       ? NetworkImage(matchModel.players[i].avatar!)
                                       : null,
                                 ),
+                                SizedBox(height: 5,),
                                 // 占用剩余空间的统计列表
                                 Expanded(
                                   child: PlayerStatsWidget(

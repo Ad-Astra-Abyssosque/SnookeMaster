@@ -12,11 +12,16 @@ class CareerData {
   double matchWinRate = 0.0;
   FrameData frameDataSummary = FrameData();
 
-  CareerData({
-    this.totalFrame = 0,
-    this.totalMatch = 0,
-    this.frameWinRate = 0.0,
-    this.matchWinRate = 0.0,
+  CareerData();
+
+  CareerData.fromDb({
+    required this.totalMatch,
+    required this.totalFrame,
+    required this.winMatches,
+    required this.winFrames,
+    required this.frameWinRate,
+    required this.matchWinRate,
+    required this.frameDataSummary,
   });
 
   void update(MatchData matchData) {

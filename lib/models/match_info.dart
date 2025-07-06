@@ -1,22 +1,30 @@
 import 'package:snooke_master/models/player.dart';
 import 'package:snooke_master/models/player_manager.dart';
-
+import 'package:uuid/uuid.dart';
 import 'match_model.dart';
 
 class MatchInfo {
-  String id;
+  String uuid;
   String createTime;  // format: 2025-06-21 15:30:33
   String name;
   String location;
   List<Player> players;
+  int frameCount = 0;
+  List<Side> winRecord = [];
+  int alphaScore = 0;
+  int betaScore = 0;
+  List<Player> alphaPlayers = [];
+  List<Player> betaPlayers = [];
 
   MatchInfo({
-    required this.id,
+    required this.uuid,
     required this.createTime,
     required this.name,
     required this.location,
     required this.players,
   });
+
+
 }
 
 
@@ -68,14 +76,13 @@ class MatchBuilder {
 
     // 生成创建时间
     final now = DateTime.now();
-    final createTime = "${now.year}-${_twoDigits(now.month)}-${_twoDigits(now.day)} "
-        "${_twoDigits(now.hour)}:${_twoDigits(now.minute)}:${_twoDigits(now.second)}";
+    final createTime = DateTime.now().toIso8601String();
 
     // 生成唯一ID（使用时间戳）
-    final id = now.millisecondsSinceEpoch.toString();
+    final uuid = Uuid().v4();
 
     return MatchInfo(
-      id: id,
+      uuid: uuid,
       createTime: createTime,
       name: name,
       location: location,

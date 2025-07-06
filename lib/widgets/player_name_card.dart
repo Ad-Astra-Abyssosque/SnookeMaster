@@ -51,8 +51,13 @@ class PlayerCardWidget extends StatelessWidget {
               // 圆形头像
               CircleAvatar(
                 radius: avatarSize / 2,
-                backgroundImage: avatar ?? const AssetImage('assets/avatar_placeholder.png'),
+                //backgroundImage: avatar ?? const AssetImage('assets/avatar_placeholder.png'),
                 backgroundColor: Colors.grey.shade200,
+                child: Icon(
+                  Icons.person, // Flutter 内置图标
+                  size: avatarSize * 0.6, // 图标大小（按比例调整）
+                  color: Colors.grey.shade600, // 图标颜色
+                ),
               ),
               // 头像与信息列之间固定间距
               const SizedBox(width: padding),

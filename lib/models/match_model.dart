@@ -2,6 +2,8 @@
 
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
+import 'package:snooke_master/database/dao/match_info_dao.dart';
+import 'package:snooke_master/models/match_info.dart';
 import 'package:snooke_master/models/player.dart';
 import 'package:snooke_master/models/data/shot_data.dart';
 
@@ -33,9 +35,13 @@ class MatchModel extends ChangeNotifier {
   bool _firstStart = true;
   int _frameScorePlayer1 = 0;
   int _frameScorePlayer2 = 0;
+  List<Side> _winRecord = [];
+  late String matchUuid;
+  MatchInfo matchInfo;
+  MatchInfoDao matchInfoDao = MatchInfoDao();
 
   // 单局比分
-  int _currentScorePlayer1 = 147;
+  int _currentScorePlayer1 = 0;
   int _currentScorePlayer2 = 0;
 
   // 计时相关
@@ -43,20 +49,31 @@ class MatchModel extends ChangeNotifier {
   int _currentGameSeconds = 0; // 单局时长（秒）
   int _totalGameSeconds = 0;   // 总时长（秒）
   bool _isRunning = false;     // 计时器是否运行中
-  Map<Player, int> _lastShotTime = {}; //保存每个player上次击球的时间，刚换到当前player则重置为0
+  late Map<Player, int> _lastShotTime = {}; //保存每个player上次击球的时间，刚换到当前player则重置为0
 
   final List<_ScoreBoardStateSnapshot> _undoStack = [];
 
   // 选手相关
-  List<Player> players;
+  late List<Player> players;
   Side _currentSide = Side.alpha;
   int _currentIndex = 0;
 
+
   // 构造函数传入players
   MatchModel({
-    required this.players
+    required this.matchInfo,
+  }) {
+    players = List.from(matchInfo.players);
+    matchUuid = matchInfo.uuid;
 
-  });
+    if (_firstStart) {
+      _firstStart = false;
+      for (int i = 0; i < players.length; i++) {
+        _lastShotTime[players[i]] = _currentGameSeconds;
+        players[i].onMatchStart();
+      }
+    }
+  }
 
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -70,7 +87,7 @@ class MatchModel extends ChangeNotifier {
     return {
       for (final p in players)
         if (p.currentMatchData != null) // 显式检查
-          p.id: MatchData.copy(p.currentMatchData!)
+          p.uuid: MatchData.copy(p.currentMatchData!)
     };
   }
 
@@ -86,6 +103,7 @@ class MatchModel extends ChangeNotifier {
       playerDataBackup: _createPlayerDataBackup(),
       players: List.from(players),  // 注意：需要创建一个新的列表，否则快照会持有对原列表的引用！在updatePlayers时先clear原列表就会导致问题！
       currentIndex: _currentIndex,
+      winRecord: List.from(_winRecord),
     ));
   }
 
@@ -97,12 +115,13 @@ class MatchModel extends ChangeNotifier {
     _frameScorePlayer2 = snapshot.frameScorePlayer2;
     _currentGameSeconds = snapshot.currentGameSeconds;
     _totalGameSeconds = snapshot.totalGameSeconds;
+    _winRecord = List.from(snapshot.winRecord);
 
     updatePlayers(snapshot.players, snapshot.currentIndex, false);
 
     // restore every player's currentMatchData
     for (final player in players) {
-      final backupData = snapshot.playerDataBackup[player.id];
+      final backupData = snapshot.playerDataBackup[player.uuid];
       if (backupData != null) {
         player.currentMatchData = backupData;
       } else {
@@ -224,8 +243,10 @@ class MatchModel extends ChangeNotifier {
   }
 
   void _recordShot(BallColor ball, int score, ShotResult shotResult) {
+    print('record shot');
     // 统计出杆时长
     int shotTimeSeconds = _currentGameSeconds - _lastShotTime[currentShootingPlayer]!;
+    print('shotTimeSeconds $shotTimeSeconds');
     _lastShotTime[currentShootingPlayer!] = _currentGameSeconds;
     switch (shotResult) {
       case ShotResult.pot: {
@@ -241,7 +262,13 @@ class MatchModel extends ChangeNotifier {
         break;
       }
     }
-    currentShootingPlayer?.addShotData(ShotData(shotTime: shotTimeSeconds, ball: ball, score: score, shotResult: shotResult));
+    if (currentShootingPlayer == null) {
+      print('currentShootingPlayer is null');
+    }
+    currentShootingPlayer?.addShotData(ShotData(
+        shotTime: shotTimeSeconds, ball: ball, score: score, shotResult: shotResult,
+        frameIndex: _frameScorePlayer1 + _frameScorePlayer2
+    ));
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -264,8 +291,10 @@ class MatchModel extends ChangeNotifier {
     _saveFrameData(side);
     if (side == Side.alpha) {
       _frameScorePlayer1++;
+      _winRecord.add(Side.alpha);
     } else {
       _frameScorePlayer2++;
+      _winRecord.add(Side.beta);
     }
     // 重置单局数据
     _currentScorePlayer1 = 0;
@@ -282,12 +311,7 @@ class MatchModel extends ChangeNotifier {
 
   // 开始/暂停计时
   void toggleTimer() {
-    if (_firstStart) {
-      _firstStart = false;
-      for (int i = 0; i < players.length; i++) {
-        players[i].onMatchStart();
-      }
-    }
+
     if (_isRunning) {
       _timer?.cancel();
     } else {
@@ -314,6 +338,7 @@ class MatchModel extends ChangeNotifier {
     _currentGameSeconds = 0;
     _totalGameSeconds = 0;
     _isRunning = false;
+    _winRecord.clear();
     for (int i = 0; i < players.length; i++) {
       players[i].onMatchReset();
     }
@@ -344,7 +369,20 @@ class MatchModel extends ChangeNotifier {
   }
 
   void stopMatch(bool save) {
-
+    Side winSide = frameScorePlayer1 > frameScorePlayer2 ? Side.alpha : Side.beta;
+    for (var player in players) {
+      bool win = player.currentSide == winSide;
+      player.onMatchEnd(win, matchUuid, save);
+    }
+    // TODO 在此持久化本局赛事数据
+    if (save) {
+      matchInfo.winRecord = _winRecord;
+      matchInfo.alphaScore = frameScorePlayer1;
+      matchInfo.betaScore = frameScorePlayer2;
+      matchInfo.frameCount = frameScorePlayer1 + frameScorePlayer2;
+      matchInfoDao.insert(matchInfo);
+      debugPrint('Insert matchInfo into matches');
+    }
   }
 
 }
@@ -361,6 +399,7 @@ class _ScoreBoardStateSnapshot {
   final Map<String, MatchData> playerDataBackup;
   final List<Player> players;
   final int currentIndex;
+  final List<Side> winRecord;
   // ... 其他需要保存的状态
   _ScoreBoardStateSnapshot({
     required this.currentScorePlayer1,
@@ -372,5 +411,6 @@ class _ScoreBoardStateSnapshot {
     required this.playerDataBackup,
     required this.players,
     required this.currentIndex,
+    required this.winRecord,
   });
 }
