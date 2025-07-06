@@ -43,6 +43,7 @@ class MatchModel extends ChangeNotifier {
   int _currentGameSeconds = 0; // 单局时长（秒）
   int _totalGameSeconds = 0;   // 总时长（秒）
   bool _isRunning = false;     // 计时器是否运行中
+  Map<Player, int> _lastShotTime = {}; //保存每个player上次击球的时间，刚换到当前player则重置为0
 
   final List<_ScoreBoardStateSnapshot> _undoStack = [];
 
@@ -54,6 +55,7 @@ class MatchModel extends ChangeNotifier {
   // 构造函数传入players
   MatchModel({
     required this.players
+
   });
 
   void _startTimer() {
@@ -192,6 +194,7 @@ class MatchModel extends ChangeNotifier {
     if (index == _currentIndex) return;
     if (index >= 0 && index < players.length) {
       _currentIndex = index;
+      _lastShotTime[players[currentIndex]] = _currentGameSeconds;
       notifyListeners();
     }
   }
@@ -199,6 +202,7 @@ class MatchModel extends ChangeNotifier {
   // 程序控制切换到下一个球员
   void _switchToNextPlayer() {
     _currentIndex = (_currentIndex + 1) % players.length;
+    _lastShotTime[players[currentIndex]] = _currentGameSeconds;
     _currentSide = currentShootingPlayer!.currentSide!;
     notifyListeners();
   }
@@ -220,6 +224,9 @@ class MatchModel extends ChangeNotifier {
   }
 
   void _recordShot(BallColor ball, int score, ShotResult shotResult) {
+    // 统计出杆时长
+    int shotTimeSeconds = _currentGameSeconds - _lastShotTime[currentShootingPlayer]!;
+    _lastShotTime[currentShootingPlayer!] = _currentGameSeconds;
     switch (shotResult) {
       case ShotResult.pot: {
         increaseScore(_currentSide, score);
@@ -234,7 +241,7 @@ class MatchModel extends ChangeNotifier {
         break;
       }
     }
-    currentShootingPlayer?.addShotData(ShotData(shotTime: 10, ball: ball, score: score, shotResult: shotResult));
+    currentShootingPlayer?.addShotData(ShotData(shotTime: shotTimeSeconds, ball: ball, score: score, shotResult: shotResult));
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -287,6 +294,12 @@ class MatchModel extends ChangeNotifier {
       _startTimer();
     }
     _isRunning = !_isRunning;
+
+    for (var p in players) {
+      _lastShotTime[p] = _currentGameSeconds;
+    }
+
+
     notifyListeners();
   }
 
@@ -303,6 +316,9 @@ class MatchModel extends ChangeNotifier {
     _isRunning = false;
     for (int i = 0; i < players.length; i++) {
       players[i].onMatchReset();
+    }
+    for (var p in players) {
+      _lastShotTime[p] = _currentGameSeconds;
     }
     notifyListeners();
   }

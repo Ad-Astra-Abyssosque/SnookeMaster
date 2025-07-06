@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/player.dart';
 import 'package:snooke_master/models/data/match_data.dart';
 import 'package:snooke_master/models/data/frame_data.dart';
+import 'package:snooke_master/models/data/career_data.dart';
+
 
 /// Widget to display a player's current frame statistics in a scrollable list.
 class PlayerStatsWidget extends StatelessWidget {
@@ -26,6 +28,7 @@ class PlayerStatsWidget extends StatelessWidget {
     // Retrieve the current frame data
     final MatchData? matchData = player.currentMatchData;
     final FrameData? frame = matchData?.currentFrameData;
+    final CareerData? careerData = player.careerData;
 
     // Set up default dimensions
     final screenWidth = MediaQuery.of(context).size.width;
@@ -37,11 +40,15 @@ class PlayerStatsWidget extends StatelessWidget {
     // Build the list of stats strings
     final List<String> items = [];
     if (frame != null) {
-      items.add('出杆数：${frame.shotsCount}');
-      items.add('进球数：${frame.potsCount}');
-      items.add('进球率：${(frame.potSuccessRate * 100).toStringAsFixed(1)}%');
-      items.add('总得分：${frame.totalScore}');
-      items.add('犯规送分：${frame.faultCount}');
+      items.add('总比赛数：${careerData?.totalMatch}');
+      items.add('总局数：${careerData?.totalFrame}');
+      items.add('总进球数：${careerData?.frameDataSummary.potsCount}');
+      items.add('当前比赛局数：${matchData?.frameCount}');
+      items.add('获胜局数：${matchData?.winFrame}');
+      items.add('本局进球数：${frame.potsCount}');
+      items.add('本局进球率：${(frame.potSuccessRate * 100).toStringAsFixed(1)}%');
+      items.add('本局总得分：${frame.totalScore}');
+      items.add('本局犯规送分：${frame.faultCount}');
       items.add('单杆得分：${frame.break_}');
       items.add('单杆最高分：${frame.highestBreak}');
       items.add('平均出杆时长：${frame.averageShotTime.toStringAsFixed(1)}秒');
