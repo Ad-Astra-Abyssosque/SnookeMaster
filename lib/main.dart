@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:snooke_master/models/match_info.dart';
+import 'package:snooke_master/models/player_manager.dart';
 import 'package:snooke_master/pages/create_match_page.dart';
 import 'package:snooke_master/pages/initial_page.dart';
 import 'package:snooke_master/pages/matches_page.dart';
@@ -17,12 +20,15 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+    return ChangeNotifierProvider(
+      create: (context) => PlayersManager(),
+      child: MaterialApp(
+        title: 'Flutter Demo',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        ),
+        home: const MainLayout(),//MyHomePage(title: 'Flutter Demo Home Page'),
       ),
-      home: const MainLayout(),//MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
@@ -40,6 +46,7 @@ class _MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
   bool _matchCreated = false; // 标记赛事是否已创建
   bool _showCreatePage = false; // 是否显示创建页面
+  late MatchInfo _matchInfo;
 
   // 修改为不可变的基础页面列表
   final List<Widget> _basePages = const [
@@ -93,7 +100,8 @@ class _MainLayoutState extends State<MainLayout> {
     // 根据状态显示不同内容
     if (_showCreatePage) {
       return CreateMatchPage(
-        onCreateSuccess: () {
+        onCreateSuccess: (MatchInfo matchInfo) {
+          _matchInfo = matchInfo;
           setState(() {
             _matchCreated = true;
             _showCreatePage = false;
@@ -106,6 +114,7 @@ class _MainLayoutState extends State<MainLayout> {
     }
     else if (_matchCreated) {
       return MatchesPage(
+        matchInfo: _matchInfo,
         onEndMatch: () {
           setState(() => _matchCreated = false);
         },

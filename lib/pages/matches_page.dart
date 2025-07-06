@@ -2,6 +2,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:snooke_master/models/match_info.dart';
 import 'package:snooke_master/widgets/balls_panel.dart';
 import 'package:snooke_master/widgets/score_board.dart';
 import 'package:snooke_master/models/match_model.dart';
@@ -14,8 +15,13 @@ import 'package:snooke_master/utils.dart';
 
 class MatchesPage extends StatefulWidget {
   final VoidCallback onEndMatch;
+  final MatchInfo matchInfo;
 
-  const MatchesPage({super.key, required this.onEndMatch});
+  const MatchesPage({
+    super.key,
+    required this.onEndMatch,
+    required this.matchInfo,
+  });
 
   @override
   State<MatchesPage> createState() => _MatchesPageState();
@@ -26,15 +32,22 @@ class _MatchesPageState extends State<MatchesPage>
 
   //final List<String> players = ['ayaka', 'eula', 'yoimiya']; // 从数据源获取球员数据
   late TabController _tabController;
-  final matchModel = MatchModel(players: [
-    Player(id: '1', name: 'ayaka', currentSide: Side.alpha),
-    Player(id: '2', name: 'eula', currentSide: Side.alpha),
-    Player(id: '3', name: 'yoimiya', currentSide: Side.beta)
-  ]);
+  // final matchModel = MatchModel(players: [
+  //   Player(id: '1', name: 'ayaka', currentSide: Side.alpha),
+  //   Player(id: '2', name: 'eula', currentSide: Side.alpha),
+  //   Player(id: '3', name: 'yoimiya', currentSide: Side.beta)
+  // ]);
+
+  late String _matchName;
+  late MatchModel matchModel;
 
   @override
   void initState() {
     super.initState();
+
+    matchModel = MatchModel(players: List.from(widget.matchInfo.players));
+    _matchName = widget.matchInfo.name;
+
     _tabController = TabController(
       length: matchModel.players.length,
       vsync: this,
@@ -99,9 +112,9 @@ class _MatchesPageState extends State<MatchesPage>
     final screenSize = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
-        title: const Align(
+        title: Align(
           alignment: Alignment.centerLeft, // 标题靠左
-          child: Text('当前对局'),
+          child: Text(_matchName),
         ),
         actions: [
           // 取消按钮 (X)
